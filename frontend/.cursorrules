@@ -1,0 +1,79 @@
+# FluxShare: Automated Payment Splitting & Subscription Management
+
+## Project Overview
+FluxShare is a decentralized payment automation platform that enables:
+1. Smart revenue splitting among multiple parties (creators, teams, stakeholders)
+2. Transparent subscription management with flexible pricing models
+3. Real-time payment distribution with zero transaction fees
+4. Complete payment history tracking and analytics
+
+Never try to mock any code , always write the working code referring to the documentation and the code examples.
+## Technology Stack
+- Frontend: Next.js with TailwindCSS, Aceternity UI components
+- Smart Contracts: IOTA MoveVM contracts
+- Integration: IOTA TypeScript SDK with Kiosk functionality
+
+## Implementation Plan
+
+### Phase 1: Project Setup & Smart Contract Development
+- Initialize project structure
+- Create contract folder structure
+- Implement subscription contract
+- Implement payment splitting contract
+- Test contracts in IOTA testnet environment
+
+### Phase 2: Frontend Core Features
+- Create landing page with modern UI elements from Aceternity
+- Implement wallet connection
+- Develop subscription creation flow
+- Build payment splitting interface
+- Create subscription management dashboard
+
+### Phase 3: Advanced Features & Polish
+- Implement analytics dashboard
+- Add notification system
+- Integrate recurring payment automation
+- Create mobile-responsive design
+- Add documentation
+
+## Feature Breakdown
+
+### Smart Contracts
+- SubscriptionManager: Handles subscription creation, payment processing, and renewal
+- PaymentSplitter: Manages automatic distribution of funds to multiple recipients
+- SubscriptionRegistry: Tracks active subscriptions and their performance metrics
+
+### Frontend Components
+- Landing Page: Explaining key benefits and use cases
+- Dashboard: For managing revenue splits and subscription arrangements
+- Wallet Connection: Seamless integration with IOTA wallets
+- Subscription Creation Wizard: Intuitive interface to create subscription plans
+- Payment Analytics: Visualize revenue flows and distribution patterns
+
+### Integration Features
+- IOTA Wallet Integration: Connect and transact with IOTA wallets
+- Kiosk SDK Implementation: Leverage IOTA's Kiosk functionality for secure transactions
+- Testnet Integration: For development and testing
+
+## File Structure
+```
+/
+├── app/                     # Next.js app directory
+│   ├── page.tsx             # Landing page
+│   ├── dashboard/           # Dashboard pages
+│   ├── subscription/        # Subscription management
+│   └── payments/            # Payment tracking
+├── components/              # UI components
+│   ├── ui/                  # Base UI components
+│   ├── subscription/        # Subscription-related components
+│   ├── payment/             # Payment-related components
+│   └── dashboard/           # Dashboard components
+├── contract/                # Smart contract code
+│   ├── subscription/        # Subscription contract
+│   ├── payment-splitter/    # Payment splitting contract
+│   └── registry/            # Subscription registry
+├── lib/                     # Utilities and helpers
+│   ├── iota/                # IOTA SDK integration
+│   └── utils/               # General utilities
+└── public/                  # Static assets
+``` 
