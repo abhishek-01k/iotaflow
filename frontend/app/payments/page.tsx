@@ -2,10 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ConnectButton } from "@iota/dapp-kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useWallet } from "@/hooks/useWallet";
+import {  useCurrentWallet } from "@iota/dapp-kit";
 import { IotaWallet } from "@/lib/iota";
 import { Loader2, Calendar, RefreshCw, Clock, Ban } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +24,7 @@ type Payment = {
 };
 
 export default function PaymentsPage() {
-  const { connected } = useWallet();
+  const { isConnected : connected } = useCurrentWallet();
   const [isLoading, setIsLoading] = useState(true);
   const [payments, setPayments] = useState<Payment[]>([]);
 
@@ -124,7 +123,6 @@ export default function PaymentsPage() {
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             Refresh
           </Button>
-          <ConnectButton />
         </div>
       </div>
 

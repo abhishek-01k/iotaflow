@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWallet } from "@/hooks/useWallet";
+import { useCurrentWallet, useCurrentAccount, useSignAndExecuteTransaction } from "@iota/dapp-kit";
 import { IotaWallet } from "@/lib/iota";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
@@ -39,20 +39,22 @@ interface VestingSchedule {
 }
 
 export function VestingList() {
-  const { connected, currentAccount } = useWallet();
+  const { currentWallet, isConnected } = useCurrentWallet();
+  const currentAccount = useCurrentAccount();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   const { toast } = useToast();
   const [vestingSchedules, setVestingSchedules] = useState<VestingSchedule[]>([]);
   const [loading, setLoading] = useState(true);
   const [claimLoading, setClaimLoading] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
-    if (connected && currentAccount) {
+    if (isConnected && currentAccount) {
       fetchVestingSchedules();
     } else {
       setVestingSchedules([]);
       setLoading(false);
     }
-  }, [connected, currentAccount]);
+  }, [isConnected, currentAccount]);
 
   async function fetchVestingSchedules() {
     try {
@@ -94,7 +96,7 @@ export function VestingList() {
   }
 
   async function handleClaim(vestingId: string) {
-    if (!connected) {
+    if (!isConnected || !currentAccount) {
       toast({
         title: "Wallet not connected",
         description: "Please connect your wallet to claim vested tokens",
@@ -176,7 +178,7 @@ export function VestingList() {
     return type === 0 ? "Linear" : "Cliff";
   }
 
-  if (!connected) {
+  if (!isConnected) {
     return (
       <Card>
         <CardHeader>
@@ -309,4 +311,4 @@ export function VestingList() {
       </div>
     </div>
   );
-} 
+}

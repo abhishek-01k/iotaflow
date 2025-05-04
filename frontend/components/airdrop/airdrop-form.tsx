@@ -26,7 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { useWallet } from "@/hooks/useWallet";
+import {  useCurrentWallet } from "@iota/dapp-kit";
 import { IotaWallet } from "@/lib/iota";
 
 // Schema for the airdrop form
@@ -57,7 +57,7 @@ const defaultValues: Partial<AirdropFormValues> = {
 
 export function AirdropForm() {
   const { toast } = useToast();
-  const { connected } = useWallet();
+  const { isConnected : connected } = useCurrentWallet();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Get the deployed contract package ID

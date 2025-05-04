@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useWallet } from "@/hooks/useWallet";
+import {  useCurrentWallet } from "@iota/dapp-kit";
 import { IotaWallet } from "@/lib/iota";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";

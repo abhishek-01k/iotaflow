@@ -18,8 +18,8 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { useWallet } from "@/hooks/useWallet";
 import { IotaWallet } from "@/lib/iota";
+import { useCurrentWallet } from "@iota/dapp-kit";
 
 // Schema for the lock form
 const lockFormSchema = z.object({
@@ -47,7 +47,7 @@ const defaultValues: Partial<LockFormValues> = {
 
 export function LockForm() {
   const { toast } = useToast();
-  const { connected } = useWallet();
+  const { isConnected } = useCurrentWallet();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form setup
@@ -61,7 +61,7 @@ export function LockForm() {
 
   // Function to create token lock
   async function onSubmit(data: LockFormValues) {
-    if (!connected) {
+    if (!isConnected) {
       toast({
         title: "Wallet not connected",
         description: "Please connect your wallet to create a token lock",
@@ -236,7 +236,7 @@ export function LockForm() {
           <Button
             type="submit"
             className="w-full"
-            disabled={isSubmitting || !connected}
+            disabled={isSubmitting || !isConnected}
           >
             {isSubmitting ? (
               <>

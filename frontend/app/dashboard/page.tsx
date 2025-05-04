@@ -4,14 +4,14 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useWallet } from "@/hooks/useWallet";
+import {  useCurrentWallet } from "@iota/dapp-kit";
 import { IotaWallet } from "@/lib/iota";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
 
 export default function DashboardPage() {
-  const { connected } = useWallet();
+  const { isConnected : connected } = useCurrentWallet();
   const [contractModules, setContractModules] = useState<string[]>([]);
   
   useEffect(() => {

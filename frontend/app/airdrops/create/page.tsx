@@ -15,7 +15,6 @@ export default function CreateAirdropPage() {
             Distribute tokens to multiple recipients at once
           </p>
         </div>
-        <ConnectButton />
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

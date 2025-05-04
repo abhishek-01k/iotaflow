@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { useWallet } from "@/hooks/useWallet";
+import {  useCurrentWallet } from "@iota/dapp-kit";
 import { Icons } from "./icons";
 import { Loader2 } from "lucide-react";
 

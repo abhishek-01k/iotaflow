@@ -15,7 +15,6 @@ export default function CreatePaymentPage() {
             Create one-time or recurring payments to any address
           </p>
         </div>
-        <ConnectButton />
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">

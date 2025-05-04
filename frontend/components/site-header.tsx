@@ -6,7 +6,6 @@ import { buttonVariants } from "@/components/ui/button"
 import { Icons } from "@/components/icons"
 import { MainNav } from "@/components/main-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { WalletConnect } from "@/components/wallet-connect"
 import { Button } from "@/components/ui/button"
 import { ConnectButton } from "@iota/dapp-kit";
 

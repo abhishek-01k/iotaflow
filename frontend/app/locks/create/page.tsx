@@ -9,12 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useWallet } from "@/hooks/useWallet";
+import {  useCurrentWallet } from "@iota/dapp-kit";
 
 export default function CreateLockPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { connected, connectWallet } = useWallet();
+  const { isConnected : connected } = useCurrentWallet();
   
   // Fixed lock state
   const [fixedAmount, setFixedAmount] = useState<string>("");
@@ -135,23 +135,6 @@ export default function CreateLockPage() {
     }
   };
 
-  if (!connected) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-lg mx-auto">
-          <CardHeader>
-            <CardTitle>Connect Wallet</CardTitle>
-            <CardDescription>
-              You need to connect your wallet to create a token lock
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <Button onClick={connectWallet}>Connect Wallet</Button>
-          </CardFooter>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">

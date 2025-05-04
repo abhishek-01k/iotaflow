@@ -26,8 +26,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/components/ui/use-toast";
 import { Loader2 } from "lucide-react";
-import { useWallet } from "@/hooks/useWallet";
-import { IotaWallet } from "@/lib/iota";
+import { 
+  useCurrentWallet,
+  useCurrentAccount,
+  useSignAndExecuteTransaction,
+  useIotaClient
+} from "@iota/dapp-kit";
+import { Transaction } from "@iota/iota-sdk/transactions";
+import { PACKAGE_ID } from "@/lib/iota/client";
 
 // Schema for the payment form
 const paymentFormSchema = z.object({
@@ -60,11 +66,12 @@ const defaultValues: Partial<PaymentFormValues> = {
 
 export function PaymentForm() {
   const { toast } = useToast();
-  const { connected } = useWallet();
+  const { isConnected } = useCurrentWallet();
+  const currentAccount = useCurrentAccount();
+  const { mutate: signAndExecuteTransaction } = useSignAndExecuteTransaction();
+  const iotaClient = useIotaClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Get the deployed contract package ID
-  const packageId = IotaWallet.getPackageId();
+  const [txDigest, setTxDigest] = useState<string | null>(null);
 
   // Form setup
   const form = useForm<PaymentFormValues>({
@@ -77,7 +84,7 @@ export function PaymentForm() {
 
   // Function to create payment
   async function onSubmit(data: PaymentFormValues) {
-    if (!connected) {
+    if (!isConnected || !currentAccount) {
       toast({
         title: "Wallet not connected",
         description: "Please connect your wallet to create a payment",
@@ -90,7 +97,10 @@ export function PaymentForm() {
       setIsSubmitting(true);
       
       // Convert amount to microIOTA
-      const amountInMicroIOTA = data.amount * 1_000_000;
+      const amountInMicroIOTA = BigInt(Math.floor(data.amount * 1_000_000));
+      
+      // Create a new transaction
+      const tx = new Transaction();
       
       if (data.paymentType === "one_time") {
         // For one-time payment
@@ -118,22 +128,20 @@ export function PaymentForm() {
           return;
         }
         
-        // Create one-time payment
-        await IotaWallet.executeContract(
-          packageId,
-          "iotaflow::payment::schedule_one_time_payment",
-          [
-            data.recipientAddress,
-            amountInMicroIOTA.toString(),
-            scheduledTimestamp.toString(),
-            data.description || "",
-          ],
-          amountInMicroIOTA // Send the amount with the transaction
-        );
+        // Split coins for the transaction with proper typing
+        const [paymentCoin] = tx.splitCoins(tx.gas, [amountInMicroIOTA]);
         
-        toast({
-          title: "Payment scheduled",
-          description: "Your one-time payment has been successfully scheduled",
+        // Create one-time payment
+        tx.moveCall({
+          target: `${PACKAGE_ID}::payment::create_one_time_payment`,
+          arguments: [
+            tx.pure.address(data.recipientAddress),
+            tx.pure.u64(amountInMicroIOTA),
+            tx.pure.u64(BigInt(scheduledTimestamp)),
+            tx.pure.string(data.description || ""),
+            paymentCoin
+          ],
+          typeArguments: [`${PACKAGE_ID}::payment::PAYMENT`],
         });
       } else {
         // For recurring payment
@@ -175,34 +183,73 @@ export function PaymentForm() {
         // First payment starts now
         const startTimestamp = Date.now();
         
-        // Create recurring payment
-        await IotaWallet.executeContract(
-          packageId,
-          "iotaflow::payment::schedule_recurring_payment",
-          [
-            data.recipientAddress,
-            amountInMicroIOTA.toString(),
-            startTimestamp.toString(),
-            intervalMs.toString(),
-            data.numberOfPayments.toString(),
-            data.description || "",
-          ],
-          amountInMicroIOTA * data.numberOfPayments // Send the total amount with the transaction
-        );
+        // Calculate total amount needed
+        const totalAmount = amountInMicroIOTA * BigInt(data.numberOfPayments);
         
-        toast({
-          title: "Recurring payment scheduled",
-          description: `Your payment of ${data.amount} IOTA will recur ${data.numberOfPayments} times at ${data.interval} intervals`,
+        // Split coins for the transaction with proper typing
+        const [paymentCoin] = tx.splitCoins(tx.gas, [totalAmount]);
+        
+        // Create recurring payment
+        tx.moveCall({
+          target: `${PACKAGE_ID}::payment::create_recurring_payment`,
+          arguments: [
+            tx.pure.address(data.recipientAddress),
+            tx.pure.u64(amountInMicroIOTA),
+            tx.pure.u64(BigInt(startTimestamp)),
+            tx.pure.u64(BigInt(intervalMs)),
+            tx.pure.u64(BigInt(data.numberOfPayments)),
+            tx.pure.string(data.description || ""),
+            paymentCoin
+          ],
+          typeArguments: [`${PACKAGE_ID}::payment::PAYMENT`],
         });
       }
 
-      // Reset the form
-      form.reset(defaultValues);
+      console.log("Transaction created:", tx);
+      
+      // Sign and execute the transaction
+      signAndExecuteTransaction(
+        { 
+          transaction: tx,
+          options: {
+            showEffects: true,
+            showEvents: true
+          }
+        },
+        {
+          onSuccess: async (result) => {
+            console.log("Transaction result:", result);
+            // Wait for transaction to be processed
+            await iotaClient.waitForTransaction({ digest: result.digest });
+            setTxDigest(result.digest);
+            
+            toast({
+              title: paymentType === "one_time" ? "Payment scheduled" : "Recurring payment scheduled",
+              description: paymentType === "one_time" 
+                ? "Your one-time payment has been successfully scheduled"
+                : `Your payment of ${data.amount} IOTA will recur ${data.numberOfPayments} times at ${data.interval} intervals`,
+            });
+            
+            // Reset the form
+            form.reset(defaultValues);
+          },
+          onError: (error) => {
+            console.error("Transaction error:", error);
+            toast({
+              title: "Transaction failed",
+              description: `Error: ${error.message || "Unknown error"}`,
+              variant: "destructive",
+            });
+          },
+        }
+      );
     } catch (error) {
       console.error("Error creating payment:", error);
       toast({
         title: "Error creating payment",
-        description: "There was an error creating your payment. Please try again.",
+        description: typeof error === 'object' && error !== null && 'message' in error 
+          ? `Error: ${(error as Error).message}` 
+          : "There was an error creating your payment. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -218,6 +265,13 @@ export function PaymentForm() {
           Create one-time or recurring payments to any address
         </p>
       </div>
+      
+      {txDigest && (
+        <div className="p-3 bg-green-50 border border-green-200 rounded-md text-sm">
+          <p className="text-green-800">Transaction successful!</p>
+          <p className="text-xs text-green-600 truncate">Digest: {txDigest}</p>
+        </div>
+      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -408,7 +462,7 @@ export function PaymentForm() {
           <Button
             type="submit"
             className="w-full"
-            disabled={isSubmitting || !connected}
+            disabled={isSubmitting || !isConnected}
           >
             {isSubmitting ? (
               <>

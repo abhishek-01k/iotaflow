@@ -9,12 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { format } from "date-fns";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useWallet } from "@/hooks/useWallet";
+import { useCurrentWallet, useCurrentAccount, useSignAndExecuteTransaction, ConnectButton } from "@iota/dapp-kit";
 
 export default function CreateVestingPage() {
   const { toast } = useToast();
   const router = useRouter();
-  const { connected, connectWallet } = useWallet();
+  const { isConnected } = useCurrentWallet();
+  const currentAccount = useCurrentAccount();
+  const { mutateAsync: signAndExecute } = useSignAndExecuteTransaction();
   
   // Linear vesting state
   const [linearAmount, setLinearAmount] = useState<string>("");
@@ -34,7 +36,7 @@ export default function CreateVestingPage() {
 
   // Handle linear vesting creation
   const handleCreateLinearVesting = async () => {
-    if (!connected) {
+    if (!isConnected || !currentAccount) {
       toast({
         title: "Wallet not connected",
         description: "Please connect your wallet to create a vesting schedule",
@@ -88,7 +90,7 @@ export default function CreateVestingPage() {
 
   // Handle cliff vesting creation
   const handleCreateCliffVesting = async () => {
-    if (!connected) {
+    if (!isConnected || !currentAccount) {
       toast({
         title: "Wallet not connected",
         description: "Please connect your wallet to create a vesting schedule",
@@ -141,7 +143,7 @@ export default function CreateVestingPage() {
     }
   };
 
-  if (!connected) {
+  if (!isConnected || !currentAccount) {
     return (
       <div className="container mx-auto px-4 py-8">
         <Card className="max-w-lg mx-auto">
@@ -152,7 +154,8 @@ export default function CreateVestingPage() {
             </CardDescription>
           </CardHeader>
           <CardFooter>
-            <Button onClick={connectWallet}>Connect Wallet</Button>
+            <Button onClick={() => {}} className="w-full">
+            </Button>
           </CardFooter>
         </Card>
       </div>

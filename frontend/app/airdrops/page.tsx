@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ConnectButton } from "@iota/dapp-kit";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useWallet } from "@/hooks/useWallet";
+import { useCurrentWallet } from "@iota/dapp-kit";
 import { IotaWallet } from "@/lib/iota";
 import { Loader2, Sparkles, RefreshCw, Clock, User, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,7 @@ type Airdrop = {
 };
 
 export default function AirdropsPage() {
-  const { connected } = useWallet();
+  const { isConnected : connected } = useCurrentWallet();
   const [isLoading, setIsLoading] = useState(true);
   const [airdrops, setAirdrops] = useState<Airdrop[]>([]);
 
@@ -138,7 +138,6 @@ export default function AirdropsPage() {
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             Refresh
           </Button>
-          <ConnectButton />
         </div>
       </div>
 

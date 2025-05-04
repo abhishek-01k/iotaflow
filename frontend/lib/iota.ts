@@ -1,3 +1,6 @@
+import { Transaction } from '@iota/iota-sdk/transactions';
+import { PACKAGE_ID, iotaClient } from './iota/client';
+
 // Define the expected wallet instance type
 type WalletInstance = {
   address: {
@@ -10,6 +13,7 @@ type WalletInstance = {
       available: number;
     };
   }>;
+  signTransaction: (transaction: any) => Promise<any>;
 };
 
 class IotaWalletAdapter {
@@ -18,8 +22,8 @@ class IotaWalletAdapter {
   private walletConnected = false;
   private currentAddress: string | null = null;
   
-  // Add the deployed package ID
-  private readonly IOTAFLOW_PACKAGE_ID = "0xe2990fecf7f783c1c31f300468e32e7632cb49e01f2b5dce73bdb6607bbcf7cb";
+  // Use the deployed package ID from client.ts
+  private readonly IOTAFLOW_PACKAGE_ID = PACKAGE_ID;
   
   private constructor() {
     // Check for wallet connection on initialization
@@ -226,41 +230,59 @@ class IotaWalletAdapter {
   }
 
   /**
+   * Execute a smart contract transaction
+   */
+  public async executeTransaction(transaction: Transaction): Promise<any> {
+    if (!this.walletConnected || !this.walletInstance) {
+      throw new Error("Wallet not connected");
+    }
+
+    try {
+      const signedTransaction = await this.signTransaction(transaction);
+      return await iotaClient.executeTransaction(transaction, signedTransaction);
+    } catch (error) {
+      console.error("Error executing transaction:", error);
+      throw error;
+    }
+  }
+  
+  /**
    * Execute a smart contract call
    */
   public async executeContract(
-    contractAddress: string,
-    methodName: string,
+    moduleFunction: string,
     args: any[],
-    amount: number = 0
+    amount: bigint = BigInt(0)
   ): Promise<any> {
     if (!this.walletConnected || !this.walletInstance) {
       throw new Error("Wallet not connected");
     }
 
     try {
-      // If contractAddress is not provided, use the deployed package ID
-      const targetAddress = contractAddress || this.IOTAFLOW_PACKAGE_ID;
+      // Create a new transaction
+      const tx = new Transaction();
       
-      console.log(`Executing contract call: ${methodName} on ${targetAddress} with args:`, args);
+      console.log(`Executing contract call: ${moduleFunction} with args:`, args);
       
-      const transaction = {
-        type: "BasicOutput",
-        amount: amount.toString(),
-        recipientAddress: targetAddress,
-        payload: {
-          type: "Contract",
-          method: methodName,
-          args,
-        },
-      };
-
-      const signedTransaction = await this.signTransaction(transaction);
-      const response = await (window as any).iota.sendTransaction({
-        signedTransaction,
-      });
-
-      return response;
+      // If amount is greater than 0, split coins for the transaction
+      if (amount > BigInt(0)) {
+        const [coin] = tx.splitCoins(tx.gas, [tx.pure(amount)]);
+        
+        // Call the contract function
+        tx.moveCall({
+          target: `${this.IOTAFLOW_PACKAGE_ID}::${moduleFunction}`,
+          arguments: args.map(arg => tx.pure(arg)),
+        });
+      } else {
+        // Call the contract function without transferring coins
+        tx.moveCall({
+          target: `${this.IOTAFLOW_PACKAGE_ID}::${moduleFunction}`,
+          arguments: args.map(arg => tx.pure(arg)),
+        });
+      }
+      
+      // Execute the transaction
+      return await this.executeTransaction(tx);
     } catch (error) {
       console.error("Error executing contract:", error);
       throw error;
@@ -305,19 +327,20 @@ export const IotaWallet = {
     );
   },
   executeContract: async (
-    contractAddress: string,
-    methodName: string,
+    moduleFunction: string,
     args: any[],
-    amount: number = 0
+    amount: bigint = BigInt(0)
   ): Promise<any> => {
     return await IotaWalletAdapter.getInstance().executeContract(
-      contractAddress,
-      methodName,
+      moduleFunction,
       args,
       amount
     );
   },
+  executeTransaction: async (transaction: Transaction): Promise<any> => {
+    return await IotaWalletAdapter.getInstance().executeTransaction(transaction);
+  },
   getPackageId: (): string => {
     return IotaWalletAdapter.getInstance().getPackageId();
   },
-}; 
+};
