@@ -102,6 +102,18 @@ export function PaymentForm() {
       // Create a new transaction
       const tx = new Transaction();
       
+      // Split coins for the transaction with proper typing
+      const [paymentCoin] = tx.splitCoins(tx.gas, [amountInMicroIOTA]);
+
+      // Swap to PAYMENT coin type
+      const paymentTypeCoin = tx.moveCall({
+        target: `${PACKAGE_ID}::payment::swap_to_payment`,
+        arguments: [paymentCoin],
+        typeArguments: [`${PACKAGE_ID}::payment::PAYMENT`],
+      });
+
+      tx.setGasBudget(10_000_000); // Set explicit gas budget
+
       if (data.paymentType === "one_time") {
         // For one-time payment
         if (!data.scheduledDate) {
@@ -128,9 +140,6 @@ export function PaymentForm() {
           return;
         }
         
-        // Split coins for the transaction with proper typing
-        const [paymentCoin] = tx.splitCoins(tx.gas, [amountInMicroIOTA]);
-        
         // Create one-time payment
         tx.moveCall({
           target: `${PACKAGE_ID}::payment::create_one_time_payment`,
@@ -139,7 +148,7 @@ export function PaymentForm() {
             tx.pure.u64(amountInMicroIOTA),
             tx.pure.u64(BigInt(scheduledTimestamp)),
             tx.pure.string(data.description || ""),
-            paymentCoin
+            paymentTypeCoin
           ],
           typeArguments: [`${PACKAGE_ID}::payment::PAYMENT`],
         });
@@ -187,7 +196,14 @@ export function PaymentForm() {
         const totalAmount = amountInMicroIOTA * BigInt(data.numberOfPayments);
         
         // Split coins for the transaction with proper typing
-        const [paymentCoin] = tx.splitCoins(tx.gas, [totalAmount]);
+        const [recurringPaymentCoin] = tx.splitCoins(tx.gas, [totalAmount]);
+        
+        // Swap to PAYMENT coin type for recurring payment
+        const recurringPaymentTypeCoin = tx.moveCall({
+          target: `${PACKAGE_ID}::payment::swap_to_payment`,
+          arguments: [recurringPaymentCoin],
+          typeArguments: [`${PACKAGE_ID}::payment::PAYMENT`],
+        });
         
         // Create recurring payment
         tx.moveCall({
@@ -199,7 +215,7 @@ export function PaymentForm() {
             tx.pure.u64(BigInt(intervalMs)),
             tx.pure.u64(BigInt(data.numberOfPayments)),
             tx.pure.string(data.description || ""),
-            paymentCoin
+            recurringPaymentTypeCoin
           ],
           typeArguments: [`${PACKAGE_ID}::payment::PAYMENT`],
         });

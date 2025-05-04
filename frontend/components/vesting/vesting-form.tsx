@@ -118,12 +118,17 @@ export function VestingForm() {
       // Create a new transaction
       const tx = new Transaction();
 
-      // Special modification: we need to first create a primary coin
-      // then transfer it to the contract with the right type
+      // 1. Split IOTA/USDC coin as before
+      const [usdcCoin] = tx.splitCoins(tx.gas, [amountInMicroIOTA]);
       
-      // First, split coins from gas for payment
       const [primaryCoin] = tx.splitCoins(tx.gas, [amountInMicroIOTA]);
-      
+      // 2. Swap/mint to Coin<VESTING> using your coin module's function
+      const vestingCoin = tx.moveCall({
+        target: `${PACKAGE_ID}::usdc_coin::swap_to_vesting`, // or whatever your function is called
+        arguments: [usdcCoin],
+        typeArguments: [], // or the correct type argument if needed
+      });
+
       // Call the contract based on vesting type
       if (data.vestingType === "linear") {
         tx.moveCall({
@@ -137,6 +142,8 @@ export function VestingForm() {
           ],
           typeArguments: [`${PACKAGE_ID}::vesting::VESTING`],
         });
+
+        tx.setGasBudget(10_000_000);
       } else {
         // Cliff vesting
         const cliffTimestamp = new Date(data.cliffDate || "").getTime();
@@ -160,7 +167,7 @@ export function VestingForm() {
             tx.pure.u64(BigInt(startTimestamp)),
             tx.pure.u64(BigInt(endTimestamp)),
             tx.pure.u64(BigInt(cliffTimestamp)),
-            primaryCoin,
+            vestingCoin,
           ],
           typeArguments: [`${PACKAGE_ID}::vesting::VESTING`],
         });
