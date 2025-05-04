@@ -1,5 +1,3 @@
-import { WebWallet } from "@iota/sdk-wasm/web";
-
 // Define the expected wallet instance type
 type WalletInstance = {
   address: {
@@ -23,7 +21,49 @@ class IotaWalletAdapter {
   // Add the deployed package ID
   private readonly IOTAFLOW_PACKAGE_ID = "0xe2990fecf7f783c1c31f300468e32e7632cb49e01f2b5dce73bdb6607bbcf7cb";
   
-  private constructor() {}
+  private constructor() {
+    // Check for wallet connection on initialization
+    this.checkWalletConnection();
+  }
+
+  private async checkWalletConnection() {
+    try {
+      if (typeof window === "undefined") return;
+      
+      // Check if wallet extension exists and is connected
+      if ((window as any).iota && (window as any).iota.isConnected) {
+        this.walletConnected = await (window as any).iota.isConnected();
+        
+        if (this.walletConnected) {
+          this.walletInstance = await (window as any).iota.getWallet();
+          // Get the current address
+          await this.updateCurrentAddress();
+        }
+      }
+    } catch (error) {
+      console.error("Error checking wallet connection:", error);
+      this.walletConnected = false;
+    }
+  }
+
+  private async updateCurrentAddress() {
+    try {
+      if (!this.walletInstance) return null;
+      
+      const addresses = await this.walletInstance.address.secret.generateEd25519Addresses({
+        accountIndex: 0,
+        range: {
+          start: 0,
+          end: 1,
+        },
+      });
+      
+      this.currentAddress = addresses[0];
+    } catch (error) {
+      console.error("Error getting address:", error);
+      this.currentAddress = null;
+    }
+  }
 
   public static getInstance(): IotaWalletAdapter {
     if (!IotaWalletAdapter.instance) {
@@ -59,15 +99,12 @@ class IotaWalletAdapter {
       this.walletConnected = true;
 
       // Get the first address
-      const addresses = await this.walletInstance.address.secret.generateEd25519Addresses({
-        accountIndex: 0,
-        range: {
-          start: 0,
-          end: 1,
-        },
-      });
-
-      this.currentAddress = addresses[0];
+      await this.updateCurrentAddress();
+      
+      if (!this.currentAddress) {
+        throw new Error("Failed to get wallet address");
+      }
+      
       return this.currentAddress;
     } catch (error) {
       console.error("Error connecting to IOTA wallet:", error);
@@ -81,6 +118,15 @@ class IotaWalletAdapter {
    * Disconnect from the IOTA wallet
    */
   public async disconnect(): Promise<void> {
+    // If the wallet extension has a disconnect method, call it
+    if (typeof window !== "undefined" && (window as any).iota && (window as any).iota.disconnect) {
+      try {
+        await (window as any).iota.disconnect();
+      } catch (error) {
+        console.error("Error disconnecting from wallet extension:", error);
+      }
+    }
+    
     this.walletInstance = null;
     this.walletConnected = false;
     this.currentAddress = null;
@@ -90,6 +136,18 @@ class IotaWalletAdapter {
    * Check if wallet is connected
    */
   public isConnected(): boolean {
+    // If in browser, try to get the connected state from the extension
+    if (typeof window !== "undefined" && (window as any).iota && (window as any).iota.isConnected) {
+      try {
+        const connectedState = (window as any).iota.isConnected();
+        // Update our internal state
+        this.walletConnected = connectedState;
+        return connectedState;
+      } catch (error) {
+        console.error("Error checking wallet connection state:", error);
+      }
+    }
+    
     return this.walletConnected && this.walletInstance !== null;
   }
 
@@ -183,6 +241,8 @@ class IotaWalletAdapter {
     try {
       // If contractAddress is not provided, use the deployed package ID
       const targetAddress = contractAddress || this.IOTAFLOW_PACKAGE_ID;
+      
+      console.log(`Executing contract call: ${methodName} on ${targetAddress} with args:`, args);
       
       const transaction = {
         type: "BasicOutput",

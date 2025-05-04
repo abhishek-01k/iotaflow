@@ -29,15 +29,6 @@ export default function FaucetPage() {
 
     setLoading(true);
     try {
-      // Get balance before faucet request
-      const beforeResponse = await fetch(`/api/balance?address=${address}`);
-      const beforeData = await beforeResponse.json();
-      
-      if (beforeData.error) {
-        throw new Error(beforeData.error);
-      }
-      
-      setBalance(prev => ({ ...prev, before: beforeData.balance }));
 
       // Make faucet request
       const faucetResponse = await fetch("/api/faucet", {
@@ -54,24 +45,7 @@ export default function FaucetPage() {
         throw new Error(faucetData.error);
       }
 
-      // Get balance after faucet request
-      setTimeout(async () => {
-        const afterResponse = await fetch(`/api/balance?address=${address}`);
-        const afterData = await afterResponse.json();
-        
-        if (afterData.error) {
-          throw new Error(afterData.error);
-        }
-        
-        setBalance(prev => ({ ...prev, after: afterData.balance }));
-        
-        toast({
-          title: "Success!",
-          description: `Tokens sent successfully. Your balance increased from ${beforeData.balance} to ${afterData.balance} IOTA.`,
-        });
-        
-        setLoading(false);
-      }, 5000); // Wait 5 seconds for transaction to process
+
     } catch (error) {
       console.error("Error requesting tokens:", error);
       toast({

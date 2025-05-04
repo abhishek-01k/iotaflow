@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { ConnectButton } from "@iota/dapp-kit";
 import { IotaWallet } from "@/lib/iota";
 
 // Define wallet hook types
@@ -90,6 +91,7 @@ export function useWallet() {
   useEffect(() => {
     if (!state.connected) return;
 
+    refreshBalance();
     const intervalId = setInterval(refreshBalance, 10000); // Refresh every 10 seconds
     return () => clearInterval(intervalId);
   }, [state.connected, refreshBalance]);

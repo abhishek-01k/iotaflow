@@ -22,12 +22,14 @@ interface RootLayoutProps {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  // Create a QueryClient instance
+  const queryClient = new QueryClient();
 
-  const { networkConfig } = createNetworkConfig({
-    localnet: { url: getFullnodeUrl('localnet') },
+  // Define network configurations
+  const networks = {
     testnet: { url: getFullnodeUrl('testnet') },
-});
-const queryClient = new QueryClient();
+    devnet: { url: getFullnodeUrl('devnet') },
+  };
 
   return (
     <>
@@ -40,17 +42,17 @@ const queryClient = new QueryClient();
           )}
         >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <QueryClientProvider client={queryClient}>
-          <IotaClientProvider networks={networkConfig} defaultNetwork="localnet">
-              <WalletProvider>
-            <div className="relative flex min-h-screen flex-col">
-              <SiteHeader />
-              <div className="flex-1">{children}</div>
-            </div>
-            <TailwindIndicator />
-            <Toaster />
-            </WalletProvider>
-            </IotaClientProvider>
+            <QueryClientProvider client={queryClient}>
+              <IotaClientProvider networks={networks} defaultNetwork="testnet">
+                <WalletProvider>
+                  <div className="relative flex min-h-screen flex-col">
+                    <SiteHeader />
+                    <div className="flex-1">{children}</div>
+                  </div>
+                  <TailwindIndicator />
+                  <Toaster />
+                </WalletProvider>
+              </IotaClientProvider>
             </QueryClientProvider>
           </ThemeProvider>
         </body>
