@@ -1,6 +1,7 @@
-# IoTaFlow - Token Distribution Platform for IOTA
+# IoTaFlow - Token Distribution Platform for IOTA Blockchain
 
-IoTaFlow is a decentralized platform built on the IOTA blockchain that provides sophisticated token distribution and management solutions. It enables secure, programmable payment flows with zero fees, instant settlements, and complete transparency.
+IoTaFlow is a decentralized platform built on the IOTA blockchain that provides sophisticated token distribution and management solutions.
+It enables secure, programmable payment flows with zero fees, instant settlements, and complete transparency.
 
 ## Deployed Contract
 
